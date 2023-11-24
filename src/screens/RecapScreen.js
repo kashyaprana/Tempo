@@ -358,12 +358,23 @@ const RecapScreen = () => {
           height: '100%',
           marginBottom: 60,
         }}>
-
+          <View style={{ flexDirection: 'row', alignContent: 'center', justifyContent: 'space-between', marginHorizontal: 10 }}>
+            <Text style={styles.heading}>
+              {global.name}
+            </Text>
+            <Pressable>
+              <Image
+                src={global.profile_pic_url}
+                style={{ height: screenWidth * 0.1, width: screenWidth * 0.1, borderRadius: 100 }}
+              />
+            </Pressable>
+          </View>
           <View>
-            <View style={{ flexDirection: 'row', margin: 5, zIndex: 10, }}>
+            <View style={{ flexDirection: 'row', margin: 5, zIndex: 10, alignItems: 'center', justifyContent: 'space-between' }}>
               <Text style={styles.heading}>
                 Your Top Artists
               </Text>
+
               <DropDownPicker
                 open={open}
                 value={timeRange}
@@ -372,11 +383,10 @@ const RecapScreen = () => {
                 setValue={setTimeRange}
                 setItems={setItems}
                 style={{
-                  width: screenWidth * 0.3,
+                  width: screenWidth * 0.2,
                   borderWidth: 0.5,
                   backgroundColor: 'transparent',
                   borderColor: '#FFF',
-                  marginLeft: 10,
                   color: '#FFF',
 
                 }}
@@ -389,14 +399,16 @@ const RecapScreen = () => {
                   color: '#FFF'
                 }}
                 dropDownContainerStyle={{
-                  width: screenWidth * 0.3,
+                  width: screenWidth * 0.2,
                   borderWidth: 0.5,
                   backgroundColor: '#7D7D7D',
-                  marginLeft: 10,
                   borderColor: '#FFF',
                 }}
-              // showArrowIcon={false}
+                showArrowIcon={false}
+                showTickIcon={false}
               />
+
+
             </View>
 
             <View>
