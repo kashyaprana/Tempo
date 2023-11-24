@@ -74,11 +74,6 @@ const LoginScreen = () => {
         </Text>
       </Pressable>
 
-      <Pressable onPress={() => navigation.navigate("Home")}>
-        <Text style={{ color: '#fff' }}>
-          GO TO HOME
-        </Text>
-      </Pressable>
     </View>
   )
 }
