@@ -1,4 +1,7 @@
 # Tempo
- Run the following after downloading: 
- npm install  
- npx expo start
+
+Run the following:
+
+npm install
+
+npx expo start
