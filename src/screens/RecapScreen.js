@@ -21,6 +21,7 @@ import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
 import DropDownPicker from "react-native-dropdown-picker";
 import LinearGradient from 'react-native-linear-gradient';
+import { supabase } from '../../supabase';
 
 const RecapScreen = () => {
   const [loaded, setLoaded] = useState(false);
@@ -60,7 +61,7 @@ const RecapScreen = () => {
         const type = "artists";
         const time_range = timeRange;
         const topArtistsResponse = await axios.get(
-          `https://api.spotify.com/v1/me/top/${type}?time_range=${time_range}&limit=5`,
+          `https://api.spotify.com/v1/me/top/${type}?time_range=${time_range}&limit=30`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -78,12 +79,43 @@ const RecapScreen = () => {
         });
 
         // STORE ARTIST ID AND NAME
-        const artistsIdsData = formattedArtistsData.map((artist) => {
+        const artistsIds = formattedArtistsData.map((artist) => {
           return {
             id: artist.id,
             name: artist.name,
           };
         });
+
+        // EXTRACT ARTIST ID
+        const idValues = artistsIds.map(item => item.id);
+        console.log(artistsIds.slice(0, 5));
+        const artistsIdsData = artistsIds.slice(0, 5);
+
+        // UPLOAD TOP ARTISTS ID TO DB
+        try {
+          const { data, error } = await supabase
+            .from('users')
+            .select('id')
+            .eq('email', global.email);
+
+          console.log(data[0].id);
+
+
+
+          // Make an insert query to the 'id_table' (replace with your table name)
+          // const { data, error } = await supabase
+          //   .from('id_table') // Replace with your table name
+          //   .upsert([
+          //     {
+          //       ids: idValues,
+          //     },
+          //   ]);
+
+        } catch (error) {
+          console.error('Error inserting ids:');
+          return false;
+        }
+
 
         // GET TOP ALBUM OF THE ARTIST WITH THEIR ID
         const getTopAlbums = async (artistId, accessToken) => {
