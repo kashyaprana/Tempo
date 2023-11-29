@@ -27,7 +27,6 @@ const RecapScreen = () => {
   const [loaded, setLoaded] = useState(false);
   const navigation = useNavigation();
   const screenWidth = Dimensions.get('window').width;
-
   // DROPDOWN
   const [open, setOpen] = useState(false);
   const [timeRange, setTimeRange] = useState('medium_term');
@@ -38,6 +37,7 @@ const RecapScreen = () => {
   ]);
 
   // DATA
+  const [playbackState, setPlaybackState] = useState([]);
   const [topArtistAlbums, setTopArtistAlbums] = useState([]);
   const [userTopSongs, setUserTopSongs] = useState([]);
   const [userProfile, setUserProfile] = useState();
@@ -56,6 +56,31 @@ const RecapScreen = () => {
           return;
         }
 
+        const userSpotifyData = await axios.get(
+          `https://api.spotify.com/v1/me`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+
+        global.name = userSpotifyData.data.display_name;
+        global.email = userSpotifyData.data.email;
+        global.profile_pic_url = userSpotifyData.data.images[0].url;
+
+
+        // // API CALL TO GET USER'S Player
+        // const playback = await axios.get(
+        //   `https://api.spotify.com/v1/me/player`,
+        //   {
+        //     headers: {
+        //       Authorization: `Bearer ${accessToken}`,
+        //     },
+        //   }
+        // );
+
+        // console.log(playback.data);
 
         // API CALL TO GET USER'S TOP ARTISTS
         const type = "artists";
@@ -75,6 +100,7 @@ const RecapScreen = () => {
           return {
             name,
             id,
+            genres
           };
         });
 
@@ -83,39 +109,31 @@ const RecapScreen = () => {
           return {
             id: artist.id,
             name: artist.name,
+            genres: artist.genres
           };
         });
 
+        // GET GENRES
+        const getGenres = (topArtistsResponse.data.items).map((artist) => {
+          const { genres } = artist;
+          return {
+            genres
+          };
+        });
+        // Extract unique genres
+        const uniqueGenres = [...new Set(getGenres.flatMap(item => item.genres))];
+
+        // Convert the array to a comma-separated string
+        const genresString = uniqueGenres.join(',');
+        global.uniqueGenres = genresString;
+
+
         // EXTRACT ARTIST ID
-        const idValues = artistsIds.map(item => item.id);
-        console.log(artistsIds.slice(0, 5));
+        const artistidValues = artistsIds.map(item => item.id);
+        const artistidString = artistidValues.join(',');
+        global.Top30ArtistIds = artistidString;
+
         const artistsIdsData = artistsIds.slice(0, 5);
-
-        // UPLOAD TOP ARTISTS ID TO DB
-        try {
-          const { data, error } = await supabase
-            .from('users')
-            .select('id')
-            .eq('email', global.email);
-
-          console.log(data[0].id);
-
-
-
-          // Make an insert query to the 'id_table' (replace with your table name)
-          // const { data, error } = await supabase
-          //   .from('id_table') // Replace with your table name
-          //   .upsert([
-          //     {
-          //       ids: idValues,
-          //     },
-          //   ]);
-
-        } catch (error) {
-          console.error('Error inserting ids:');
-          return false;
-        }
-
 
         // GET TOP ALBUM OF THE ARTIST WITH THEIR ID
         const getTopAlbums = async (artistId, accessToken) => {
@@ -194,6 +212,16 @@ const RecapScreen = () => {
             },
           }
         );
+
+        // Extract "id" values and store them in an array
+        const trackidArray = (ResUserTopTracks.data.items).map(item => item.id);
+
+        // Convert the array to a comma-separated string
+        const trackidString = trackidArray.join(',');
+        global.Top10TracksString = trackidString;
+
+
+
 
         const songInfoArray = [];
 
@@ -304,7 +332,7 @@ const RecapScreen = () => {
       <View>
         <View style={{ flexDirection: 'row', marginVertical: 5 }}>
           {(data.slice(0, 3)).map((song, index) => (
-            <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+            <View key={index} style={{ alignItems: 'center', justifyContent: 'center' }}>
               <Image
                 src={song.album.imageURL}
                 style={{
@@ -386,11 +414,12 @@ const RecapScreen = () => {
     <LinearGradient colors={['#7D7D7D', '#000']} style={{ height: '100%', }}>
 
       {loaded ? (
-        <ScrollView style={{
-          height: '100%',
-          marginBottom: 60,
-        }}>
-          <View style={{ flexDirection: 'row', alignContent: 'center', justifyContent: 'space-between', marginHorizontal: 10 }}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          style={{
+            height: '100%',
+          }}>
+          {/* <View style={{ flexDirection: 'row', alignContent: 'center', justifyContent: 'space-between', marginHorizontal: 10 }}>
             <Text style={styles.heading}>
               {global.name}
             </Text>
@@ -400,13 +429,18 @@ const RecapScreen = () => {
                 style={{ height: screenWidth * 0.1, width: screenWidth * 0.1, borderRadius: 100 }}
               />
             </Pressable>
-          </View>
+          </View> */}
           <View>
             <View style={{ flexDirection: 'row', margin: 5, zIndex: 10, alignItems: 'center', justifyContent: 'space-between' }}>
               <Text style={styles.heading}>
                 Your Top Artists
               </Text>
-
+              <Pressable>
+                <Image
+                  src={global.profile_pic_url}
+                  style={{ height: screenWidth * 0.1, width: screenWidth * 0.1, borderRadius: 100, marginRight: 10 }}
+                />
+              </Pressable>
               <DropDownPicker
                 open={open}
                 value={timeRange}
@@ -440,7 +474,6 @@ const RecapScreen = () => {
                 showTickIcon={false}
               />
 
-
             </View>
 
             <View>
@@ -448,18 +481,29 @@ const RecapScreen = () => {
             </View>
           </View>
 
-          <View>
-            <Text style={styles.heading}>
+          <View style={{ backgroundColor: '#000', height: screenWidth * 0.3, width: screenWidth * 0.95, alignSelf: 'center', marginVertical: 10, borderRadius: 20, flexDirection: 'row' }}>
+            <Image src="/Users/kashyap/Documents/Tempo/src/utopia-tour.png" style={{ height: '90%', width: '30%', borderRadius: 20, alignSelf: 'center', margin: 10 }} />
+            <Text style={{ ...styles.artistName, width: '50%', margin: 10, marginTop: 10, fontSize: 18 }}>
+              Travis Scott Utopia Tour Presents Circus Maximus, get Tickets now!
+            </Text>
+
+          </View>
+          <View style={{ flexDirection: 'row', margin: 5, zIndex: 10, alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text style={{ ...styles.heading }}>
               Your Top Songs
             </Text>
-            <View>
-              <TopSongsList data={userTopSongs} />
-            </View>
+
+          </View>
+          <View>
+            <TopSongsList data={userTopSongs} />
+          </View>
+
+          <View style={{ marginBottom: 60, }}>
           </View>
 
         </ScrollView>
       ) : (
-        <Text> LOADING... </Text>
+        <Text style={styles.heading}> LOADING... </Text>
       )}
     </LinearGradient>
   )
